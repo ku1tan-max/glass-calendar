@@ -1,25 +1,26 @@
-/**
- * Glass Calendar 프로젝트의 핵심 데이터 규격 정의
- */
+// src/types/index.ts
 
-// 1. 캘린더 이벤트 및 할 일 통합 인터페이스
 export interface CalendarEvent {
-  id: string;             // 고유식별자 (UUID 등)
-  title: string;          // 일정/할 일 제목
-  date: string;           // 날짜 형식: YYYY-MM-DD
-  time?: string;          // 시간 (선택사항, 예: 14:00)
-  category: string;       // 카테고리 (Work, Personal, Study 등)
-  color: string;          // UI에 표시될 색상 (Hex 코드 또는 Tailwind 클래스명)
-  isCompleted: boolean;   // 완료 여부 (투두 리스트 연동용)
-  description?: string;   // 상세 설명 (선택사항)
+  id: string;
+  title: string;
+  date: string;           // YYYY-MM-DD
+  time?: string;          // HH:mm (선택적 속성 유지)
+  categoryId: string;     // 커스텀 카테고리 연동을 위한 ID
+  category: string;       // 표시용 카테고리 이름 (기존 로직 호환)
+  color: string;          // 표시용 색상 (기존 로직 호환)
+  isCompleted: boolean;
+  description?: string;
 }
 
-// 2. 포모도로 상태 타입 (추후 기능 구현 시 참조)
-export type TimerStatus = 'idle' | 'running' | 'paused' | 'finished';
-
-// 3. 앱 테마 관련 타입 (설정 모달용)
-export interface AppSettings {
-  blurAmount: number;
-  bgImage: string | null;
-  focusMode: boolean;
+export interface Category {
+  id: string;
+  name: string;
+  color: string;
 }
+
+// 기본 카테고리 데이터 정의
+export const DEFAULT_CATEGORIES: Category[] = [
+  { id: 'cat_red', name: '긴급', color: '#ef4444' },
+  { id: 'cat_blue', name: '일반', color: '#3b82f6' },
+  { id: 'cat_green', name: '성공', color: '#10b981' },
+];

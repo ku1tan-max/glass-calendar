@@ -3,41 +3,38 @@
 import React, { useState } from 'react';
 import { useEventsContext } from '@/context/EventsContext';
 import { format } from 'date-fns';
-import { Clock, Tag } from 'lucide-react';
+import { Clock, Tag, X } from 'lucide-react';
+import { DEFAULT_CATEGORIES } from '@/types';
 
+/* --- 1. AddEventForm: 실제 입력 폼 (SlidePanel 등에서 사용) --- */
 interface AddEventFormProps {
-  onSuccess: () => void;
+  onSuccess?: () => void;
 }
 
-const COLORS = [
-  { name: 'Red', value: '#ef4444' },
-  { name: 'Blue', value: '#3b82f6' },
-  { name: 'Green', value: '#10b981' },
-  { name: 'Purple', value: '#a855f7' },
-];
-
-const AddEventForm: React.FC<AddEventFormProps> = ({ onSuccess }) => {
+export const AddEventForm: React.FC<AddEventFormProps> = ({ onSuccess }) => {
   const { addEvent, selectedDate } = useEventsContext();
   const [title, setTitle] = useState('');
   const [time, setTime] = useState('12:00');
-  const [color, setColor] = useState(COLORS[0].value);
+  const [selectedCat, setSelectedCat] = useState(DEFAULT_CATEGORIES[1]); // 기본 '일반' 선택
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim()) return;
 
+    // [10. 자가 점검] CalendarEvent 인터페이스 규격에 맞춰 모든 필수 필드 전달
     addEvent({
       id: crypto.randomUUID(),
       title,
       date: format(selectedDate, 'yyyy-MM-dd'),
-      time,
-      category: 'General',
-      color,
+      time: time,             // [해결] time 변수를 명시적으로 할당
+      categoryId: selectedCat.id,
+      category: selectedCat.name,
+      color: selectedCat.color,
       isCompleted: false,
     });
 
-    // 저장 성공 후 부모(SlidePanel)에게 닫기 신호를 보냄
-    onSuccess();
+    if (onSuccess) onSuccess();
+    setTitle('');
   };
 
   return (
@@ -50,7 +47,7 @@ const AddEventForm: React.FC<AddEventFormProps> = ({ onSuccess }) => {
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           placeholder="무엇을 집행할 것인가?"
-          className="w-full bg-white/30 border border-white/40 p-4 rounded-2xl focus:outline-none focus:ring-2 focus:ring-slate-400 transition-all"
+          className="w-full bg-white/30 border border-white/40 p-4 rounded-2xl focus:outline-none focus:ring-2 focus:ring-slate-400"
         />
       </div>
 
@@ -71,13 +68,13 @@ const AddEventForm: React.FC<AddEventFormProps> = ({ onSuccess }) => {
           <Tag size={12} /> 인장 색상
         </label>
         <div className="flex gap-3 p-2">
-          {COLORS.map((c) => (
+          {DEFAULT_CATEGORIES.map((cat) => (
             <button
-              key={c.value}
+              key={cat.id}
               type="button"
-              onClick={() => setColor(c.value)}
-              className={`w-8 h-8 rounded-full border-2 transition-transform ${color === c.value ? 'border-slate-800 scale-110' : 'border-transparent'}`}
-              style={{ backgroundColor: c.value }}
+              onClick={() => setSelectedCat(cat)}
+              className={`w-8 h-8 rounded-full border-2 transition-transform ${selectedCat.id === cat.id ? 'border-slate-800 scale-110' : 'border-transparent'}`}
+              style={{ backgroundColor: cat.color }}
             />
           ))}
         </div>
@@ -93,4 +90,29 @@ const AddEventForm: React.FC<AddEventFormProps> = ({ onSuccess }) => {
   );
 };
 
-export default AddEventForm;
+/* --- 2. AddEventModal: 팝업 래퍼 (Calendar 등에서 사용) --- */
+interface AddEventModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  selectedDate?: Date | null; 
+}
+
+const AddEventModal: React.FC<AddEventModalProps> = ({ isOpen, onClose }) => {
+  if (!isOpen) return null; // [해결] isOpen Props 기반 렌더링 제어
+
+  return (
+    <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/20 backdrop-blur-sm">
+      <div className="w-[400px] glass-effect bg-white/40 rounded-[2.5rem] p-8 shadow-2xl animate-in zoom-in-95 duration-200">
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-xl font-black text-slate-800 tracking-tight">일정 하명</h2>
+          <button onClick={onClose} className="p-2 hover:bg-white/20 rounded-full text-slate-500">
+            <X size={20} />
+          </button>
+        </div>
+        <AddEventForm onSuccess={onClose} />
+      </div>
+    </div>
+  );
+};
+
+export default AddEventModal;

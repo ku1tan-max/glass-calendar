@@ -1,19 +1,23 @@
 "use client";
 
-import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
-import { CalendarEvent } from '@/types';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { CalendarEvent, Category, DEFAULT_CATEGORIES } from '@/types';
 
 interface EventsContextType {
-  // --- 기존 캘린더 프로퍼티 ---
   events: CalendarEvent[];
+  categories: Category[]; // 추가된 카테고리 상태
   selectedDate: Date;
   setSelectedDate: (date: Date) => void;
   addEvent: (newEvent: CalendarEvent) => void;
   deleteEvent: (id: string) => void;
   toggleEvent: (id: string) => void;
-  getEventsByDate: (date: string) => CalendarEvent[];
+  
+  // 카테고리 관련 함수
+  addCategory: (category: Category) => void;
+  deleteCategory: (id: string) => void;
+  getCategoryColor: (categoryId: string) => string;
 
-  // --- 추가된 타이머 및 메모 상태 ---
+  // 타이머 및 메모 상태
   isTimerRunning: boolean;
   setIsTimerRunning: (val: boolean) => void;
   timerTime: number; 
@@ -25,83 +29,72 @@ interface EventsContextType {
 const EventsContext = createContext<EventsContextType | undefined>(undefined);
 
 export const EventsProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  // 1. 기존 상태들
   const [events, setEvents] = useState<CalendarEvent[]>([]);
+  const [categories, setCategories] = useState<Category[]>(DEFAULT_CATEGORIES);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
-  const [isInitialized, setIsInitialized] = useState(false);
-
-  // 2. 추가된 상태들 (타이머, 메모)
   const [isTimerRunning, setIsTimerRunning] = useState(false);
-  const [timerTime, setTimerTime] = useState(25 * 60); // 기본 25분
+  const [timerTime, setTimerTime] = useState(25 * 60);
   const [pinnedMemo, setPinnedMemo] = useState<string | null>(null);
 
-  // 로컬 스토리지 데이터 로드 (기존 로직)
+  // 로컬 스토리지 로드
   useEffect(() => {
     const savedEvents = localStorage.getItem('glass-calendar-events');
-    if (savedEvents) {
-      try {
-        setEvents(JSON.parse(savedEvents));
-      } catch (error) {
-        console.error("데이터 로드 실패:", error);
-      }
-    }
-    setIsInitialized(true);
+    const savedCategories = localStorage.getItem('glass-calendar-categories');
+    const savedPinnedMemo = localStorage.getItem('glass-pinned-memo');
+
+    if (savedEvents) setEvents(JSON.parse(savedEvents));
+    if (savedCategories) setCategories(JSON.parse(savedCategories));
+    if (savedPinnedMemo) setPinnedMemo(savedPinnedMemo);
   }, []);
 
-  // 데이터 변경 시 로컬 스토리지 업데이트 (기존 로직)
+  // 로컬 스토리지 저장
   useEffect(() => {
-    if (isInitialized) {
-      localStorage.setItem('glass-calendar-events', JSON.stringify(events));
-    }
-  }, [events, isInitialized]);
+    localStorage.setItem('glass-calendar-events', JSON.stringify(events));
+  }, [events]);
 
-  // --- 기존 함수들 유지 ---
+  useEffect(() => {
+    localStorage.setItem('glass-calendar-categories', JSON.stringify(categories));
+  }, [categories]);
+
+  useEffect(() => {
+    if (pinnedMemo) localStorage.setItem('glass-pinned-memo', pinnedMemo);
+    else localStorage.removeItem('glass-pinned-memo');
+  }, [pinnedMemo]);
+
   const addEvent = useCallback((newEvent: CalendarEvent) => {
     setEvents((prev) => [...prev, newEvent]);
   }, []);
 
   const deleteEvent = useCallback((id: string) => {
-    setEvents((prev) => prev.filter((event) => event.id !== id));
+    setEvents((prev) => prev.filter((e) => e.id !== id));
   }, []);
 
   const toggleEvent = useCallback((id: string) => {
-    setEvents((prev) =>
-      prev.map((event) =>
-        event.id === id ? { ...event, isCompleted: !event.isCompleted } : event
-      )
-    );
+    setEvents((prev) => prev.map((e) => e.id === id ? { ...e, isCompleted: !e.isCompleted } : e));
   }, []);
 
-  const getEventsByDate = useCallback((date: string) => {
-    return events.filter((event) => event.date === date);
-  }, [events]);
+  const addCategory = (category: Category) => setCategories(prev => [...prev, category]);
+  const deleteCategory = (id: string) => setCategories(prev => prev.filter(c => c.id !== id));
+  const getCategoryColor = (categoryId: string) => {
+    return categories.find(c => c.id === categoryId)?.color || '#94A3B8';
+  };
 
   return (
     <EventsContext.Provider value={{
-      events,
-      selectedDate,
-      setSelectedDate,
-      addEvent,
-      deleteEvent,
-      toggleEvent,
-      getEventsByDate,
-      // 새롭게 추가된 값들 전달
-      isTimerRunning,
-      setIsTimerRunning,
-      timerTime,
-      setTimerTime,
-      pinnedMemo,
-      setPinnedMemo
+      events, categories, selectedDate, setSelectedDate,
+      addEvent, deleteEvent, toggleEvent,
+      addCategory, deleteCategory, getCategoryColor,
+      isTimerRunning, setIsTimerRunning, timerTime, setTimerTime,
+      pinnedMemo, setPinnedMemo
     }}>
       {children}
     </EventsContext.Provider>
   );
 };
 
+// 기존 이름 그대로 유지
 export const useEventsContext = () => {
   const context = useContext(EventsContext);
-  if (!context) {
-    throw new Error("useEventsContext must be used within an EventsProvider");
-  }
+  if (!context) throw new Error("useEventsContext must be used within an EventsProvider");
   return context;
 };

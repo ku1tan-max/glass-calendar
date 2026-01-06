@@ -36,3 +36,12 @@
 body {
   @apply overflow-hidden m-0 p-0 text-slate-800 antialiased;
 }
+/* 창을 드래그할 수 있게 만드는 클래스 */
+.drag-region {
+  -webkit-app-region: drag;
+}
+
+/* 드래그 영역 안에서도 클릭이 되어야 하는 버튼/입력창 전용 클래스 */
+.no-drag {
+  -webkit-app-region: no-drag;
+}

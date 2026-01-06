@@ -1,130 +1,82 @@
 "use client";
 
 import React, { useState } from 'react';
-import { 
-  format, 
-  addMonths, 
-  subMonths, 
-  startOfMonth, 
-  endOfMonth, 
-  startOfWeek, 
-  endOfWeek, 
-  isSameMonth, 
-  isSameDay, 
-  addDays, 
-  eachDayOfInterval 
-} from 'date-fns';
+import { format, isSameDay, startOfMonth, endOfMonth, startOfWeek, endOfWeek, eachDayOfInterval, isSameMonth, subMonths, addMonths } from 'date-fns';
+import { ko } from 'date-fns/locale';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { useEventsContext } from '@/context/EventsContext'; // 컨텍스트 임포트
-import GlassWrapper from '@/components/layout/GlassWrapper';
+import { useEventsContext } from '@/context/EventsContext'; // 명칭 유지
+import AddEventModal from './AddEventModal';
 
 const Calendar = () => {
   const [currentMonth, setCurrentMonth] = useState(new Date());
-  
-  // 전역 상태에서 데이터와 제어 함수 가져오기
-  const { events, selectedDate, setSelectedDate } = useEventsContext();
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const { events, getCategoryColor, selectedDate, setSelectedDate } = useEventsContext();
 
-  // 헤더 렌더링 (월 이동)
-  const renderHeader = () => (
-    <div className="flex justify-between items-center mb-8">
-      <div>
-        <h2 className="text-3xl font-black text-slate-900">{format(currentMonth, 'MMMM')}</h2>
-        <p className="text-slate-500 font-medium">{format(currentMonth, 'yyyy')}</p>
-      </div>
-      <div className="flex gap-2">
-        <button onClick={() => setCurrentMonth(subMonths(currentMonth, 1))} className="glass-button w-10 h-10">
-          <ChevronLeft size={20} />
-        </button>
-        <button onClick={() => setCurrentMonth(addMonths(currentMonth, 1))} className="glass-button w-10 h-10">
-          <ChevronRight size={20} />
-        </button>
-      </div>
-    </div>
-  );
+  const monthStart = startOfMonth(currentMonth);
+  const monthEnd = endOfMonth(monthStart);
+  const startDate = startOfWeek(monthStart);
+  const endDate = endOfWeek(monthEnd);
+  const calendarDays = eachDayOfInterval({ start: startDate, end: endDate });
 
-  // 요일 표시
-  const renderDays = () => {
-    const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-    return (
-      <div className="grid grid-cols-7 mb-4">
-        {days.map((day) => (
-          <div key={day} className="text-center font-bold text-slate-400 text-xs uppercase tracking-widest">{day}</div>
+  return (
+    <div className="h-full flex flex-col glass-effect rounded-[2.5rem] bg-white/10 overflow-hidden shadow-2xl border border-white/20">
+      <div className="p-8 flex justify-between items-center bg-white/5">
+        <h2 className="text-2xl font-black text-slate-800">
+          {format(currentMonth, 'yyyy년 M월', { locale: ko })}
+        </h2>
+        <div className="flex gap-2">
+          <button onClick={() => setCurrentMonth(subMonths(currentMonth, 1))} className="p-2 hover:bg-white/20 rounded-full transition-all">
+            <ChevronLeft size={20} />
+          </button>
+          <button onClick={() => setCurrentMonth(addMonths(currentMonth, 1))} className="p-2 hover:bg-white/20 rounded-full transition-all">
+            <ChevronRight size={20} />
+          </button>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-7 border-b border-white/10 bg-white/5">
+        {['일', '월', '화', '수', '목', '금', '토'].map((day) => (
+          <div key={day} className="py-3 text-center text-[10px] font-bold text-slate-400 tracking-widest uppercase">{day}</div>
         ))}
       </div>
-    );
-  };
 
-  // 날짜 그리드 표시
-  const renderCells = () => {
-    const monthStart = startOfMonth(currentMonth);
-    const monthEnd = endOfMonth(monthStart);
-    const startDate = startOfWeek(monthStart);
-    const endDate = endOfWeek(monthEnd);
-
-    const calendarDays = eachDayOfInterval({ start: startDate, end: endDate });
-
-    return (
-      <div className="flex-1 grid grid-cols-7 gap-3 overflow-y-auto pr-2 custom-scrollbar">
-        {calendarDays.map((day, idx) => {
-          const dateStr = format(day, 'yyyy-MM-dd');
-          const dayEvents = events.filter(e => e.date === dateStr);
-          const isSelected = isSameDay(day, selectedDate);
-          const isCurrentMonth = isSameMonth(day, monthStart);
-          const isToday = isSameDay(day, new Date());
-
+      <div className="flex-1 grid grid-cols-7 overflow-y-auto custom-scrollbar">
+        {calendarDays.map((day) => {
+          // 날짜 비교 오류 수정: e.date가 문자열일 경우와 Date 객체일 경우를 모두 고려
+          const dayEvents = events.filter(e => isSameDay(new Date(e.date), day));
+          
           return (
             <div
-              key={idx}
-              onClick={() => setSelectedDate(day)} // 전역 날짜 변경
-              className={`group relative min-h-[100px] p-3 rounded-[1.5rem] cursor-pointer transition-all duration-300 flex flex-col justify-between border
-                ${!isCurrentMonth ? 'opacity-20' : 'opacity-100'}
-                ${isSelected 
-                  ? 'bg-white/40 border-white/60 shadow-lg scale-[1.02] z-10' 
-                  : 'bg-white/5 border-white/10 hover:bg-white/20 hover:border-white/30'}
-              `}
+              key={day.toString()}
+              onClick={() => {
+                setSelectedDate(day);
+                setIsModalOpen(true);
+              }}
+              className={`min-h-[100px] p-2 border-b border-r border-white/5 transition-all cursor-pointer hover:bg-white/20
+                ${!isSameMonth(day, monthStart) ? 'opacity-20' : 'opacity-100'}
+                ${isSameDay(day, new Date()) ? 'bg-white/30' : ''}`}
             >
-              <div className="flex justify-between items-start">
-                <span className={`text-sm font-bold ${isSelected ? 'text-slate-900' : 'text-slate-600'}`}>
-                  {format(day, 'd')}
-                </span>
-                {isToday && (
-                  <div className="w-1.5 h-1.5 bg-blue-500 rounded-full shadow-[0_0_8px_rgba(59,130,246,0.5)]" />
-                )}
-              </div>
-              
-              {/* 일정 인디케이터 */}
-              <div className="flex flex-wrap gap-1 mt-auto">
-                {dayEvents.slice(0, 3).map((event) => (
+              <span className={`text-xs font-bold ${isSameDay(day, new Date()) ? 'text-blue-600' : 'text-slate-600'}`}>
+                {format(day, 'd')}
+              </span>
+              <div className="mt-1 space-y-1">
+                {dayEvents.slice(0, 3).map(event => (
                   <div 
                     key={event.id}
-                    className="h-1 w-full rounded-full"
-                    style={{ backgroundColor: event.color || '#cbd5e1' }}
-                  />
+                    className="text-[9px] px-1.5 py-0.5 rounded-md text-white truncate font-medium"
+                    style={{ backgroundColor: getCategoryColor(event.categoryId) }}
+                  >
+                    {event.title}
+                  </div>
                 ))}
-                {dayEvents.length > 3 && (
-                  <span className="text-[10px] text-slate-400 font-bold">+{dayEvents.length - 3}</span>
-                )}
               </div>
-
-              {/* 선택 시 강조 효과 (글래스 글로우) */}
-              {isSelected && (
-                <div className="absolute inset-0 rounded-[1.5rem] bg-white/10 blur-[10px] -z-10" />
-              )}
             </div>
           );
         })}
       </div>
-    );
-  };
 
-  return (
-    <section className="flex-1 flex flex-col h-full overflow-hidden">
-      <GlassWrapper className="flex-1 flex flex-col h-full overflow-hidden border-white/20 p-8">
-        {renderHeader()}
-        {renderDays()}
-        {renderCells()}
-      </GlassWrapper>
-    </section>
+      <AddEventModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} selectedDate={selectedDate} />
+    </div>
   );
 };
 

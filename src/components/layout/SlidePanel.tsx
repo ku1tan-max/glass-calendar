@@ -4,8 +4,10 @@ import React from 'react';
 import GlassWrapper from './GlassWrapper';
 import Timer from '@/components/pomodoro/Timer';
 import { MemoPad } from '@/components/memo';
-import AddEventModal from '@/components/calendar/AddEventModal'; // 일정 입력 폼
+// [수정] AddEventModal 대신 AddEventForm이라는 이름으로 가져옵니다.
+import { AddEventForm } from '@/components/calendar/AddEventModal';
 import { X } from 'lucide-react';
+
 
 interface SlidePanelProps {
   isOpen: boolean;
@@ -18,7 +20,8 @@ const SlidePanel: React.FC<SlidePanelProps> = ({ isOpen, type, onClose }) => {
 
   const config = {
     pomodoro: { title: 'Focus Timer', component: <Timer /> },
-    todo: { title: 'New Task', component: <AddEventModal onSuccess={onClose} /> },
+    // 이제 위에서 AddEventForm으로 가져왔기 때문에 오류가 사라집니다.
+todo: { title: 'New Task', component: <AddEventForm onSuccess={onClose} /> }, 
     memo: { title: 'Daily Memo', component: <MemoPad /> }
   };
 

@@ -1,0 +1,38 @@
+@import "tailwindcss";
+@plugin "tailwindcss-animate";
+
+/* v4 테마 정의 */
+@theme {
+  --radius-xl: 1.5rem;
+  --radius-2xl: 2.5rem;
+}
+
+@layer components {
+  /* 사진 2번의 핵심인 유리 효과 재정의 */
+  .glass-effect {
+    @apply bg-white/10 backdrop-blur-[20px] border border-white/20 shadow-xl;
+    @layer components {
+  .glass-effect {
+    /* 불투명도를 10에서 25로 상향하여 가시성 확보 */
+    @apply bg-white/25 backdrop-blur-[20px] border border-white/30 shadow-xl;
+  }
+}
+  }
+  
+  .glass-button {
+    @apply flex items-center justify-center p-3 rounded-2xl transition-all
+           hover:bg-white/20 active:scale-95 border border-white/10 cursor-pointer;
+  }
+
+  /* 스크롤바 투명하게 */
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    @apply bg-white/20 rounded-full;
+  }
+}
+
+body {
+  @apply overflow-hidden m-0 p-0 text-slate-800 antialiased;
+}

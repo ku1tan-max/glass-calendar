@@ -1,0 +1,21 @@
+{
+  "name": "내 유리창 앱",
+  "short_name": "유리창",
+  "description": "생산성 관리 프로그램",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#e0e7ff",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icon-512.png",      
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

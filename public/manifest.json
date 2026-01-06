@@ -1,7 +1,7 @@
 {
-  "name": "내 유리창 앱",
-  "short_name": "유리창",
-  "description": "생산성 관리 프로그램",
+  "name": "Glass Calendar",
+  "short_name": "GlassCal",
+  "description": "유리 질감의 투명한 캘린더 앱",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
@@ -13,7 +13,7 @@
       "type": "image/png"
     },
     {
-      "src": "/icon-512.png",      
+      "src": "/icon-512.png",
       "sizes": "512x512",
       "type": "image/png"
     }

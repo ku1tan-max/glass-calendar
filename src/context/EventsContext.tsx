@@ -5,7 +5,7 @@ import { CalendarEvent, Category, DEFAULT_CATEGORIES } from '@/types';
 
 interface EventsContextType {
   events: CalendarEvent[];
-  categories: Category[]; // 추가된 카테고리 상태
+  categories: Category[];
   selectedDate: Date;
   setSelectedDate: (date: Date) => void;
   addEvent: (newEvent: CalendarEvent) => void;
@@ -24,6 +24,10 @@ interface EventsContextType {
   setTimerTime: (val: number | ((prev: number) => number)) => void;
   pinnedMemo: string | null;
   setPinnedMemo: (memo: string | null) => void;
+
+  // [추가] 모달 상태 및 제어 함수
+  isEventModalOpen: boolean;
+  setIsEventModalOpen: (isOpen: boolean) => void;
 }
 
 const EventsContext = createContext<EventsContextType | undefined>(undefined);
@@ -35,6 +39,9 @@ export const EventsProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const [isTimerRunning, setIsTimerRunning] = useState(false);
   const [timerTime, setTimerTime] = useState(25 * 60);
   const [pinnedMemo, setPinnedMemo] = useState<string | null>(null);
+
+  // [추가] 모달 전역 상태 선언
+  const [isEventModalOpen, setIsEventModalOpen] = useState(false);
 
   // 로컬 스토리지 로드
   useEffect(() => {
@@ -85,14 +92,16 @@ export const EventsProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       addEvent, deleteEvent, toggleEvent,
       addCategory, deleteCategory, getCategoryColor,
       isTimerRunning, setIsTimerRunning, timerTime, setTimerTime,
-      pinnedMemo, setPinnedMemo
+      pinnedMemo, setPinnedMemo,
+      // [추가] Provider에 값 전달
+      isEventModalOpen,
+      setIsEventModalOpen,
     }}>
       {children}
     </EventsContext.Provider>
   );
 };
 
-// 기존 이름 그대로 유지
 export const useEventsContext = () => {
   const context = useContext(EventsContext);
   if (!context) throw new Error("useEventsContext must be used within an EventsProvider");

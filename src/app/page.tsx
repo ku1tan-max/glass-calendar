@@ -6,8 +6,13 @@ import Sidebar from '@/components/sidebar/Sidebar';
 import Calendar from '@/components/calendar/Calendar';
 import ImageBanner from '@/components/layout/ImageBanner';
 import SlidePanel from '@/components/layout/SlidePanel';
+import AddEventModal from '@/components/calendar/AddEventModal';
+import { useEventsContext } from '@/context/EventsContext';
 
 export default function Home() {
+  // Context에서 모달 상태와 선택된 날짜 가져오기
+  const { isEventModalOpen, setIsEventModalOpen, selectedDate } = useEventsContext();
+  
   const [activePanel, setActivePanel] = useState<'pomodoro' | 'todo' | 'memo' | null>(null);
   const [isFocusMode, setIsFocusMode] = useState(false);
 
@@ -26,8 +31,7 @@ export default function Home() {
 
       <div className="flex flex-1 p-6 gap-6 overflow-hidden relative">
         
-        <Sidebar 
-        />
+        <Sidebar />
 
         <SlidePanel 
           isOpen={!!activePanel} 
@@ -45,6 +49,13 @@ export default function Home() {
           </div>
         </main>
       </div>
+
+      {/* 전역 이벤트 추가 모달 - 레이아웃 최하단에 위치 */}
+      <AddEventModal 
+        isOpen={isEventModalOpen} 
+        onClose={() => setIsEventModalOpen(false)} 
+        selectedDate={selectedDate} 
+      />
     </div>
   );
 }

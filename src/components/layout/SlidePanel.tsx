@@ -5,9 +5,8 @@ import GlassWrapper from './GlassWrapper';
 import Timer from '@/components/pomodoro/Timer';
 import { MemoPad } from '@/components/memo';
 // [수정] AddEventModal 대신 AddEventForm이라는 이름으로 가져옵니다.
+import { AddEventForm } from '@/components/calendar/AddEventModal';
 import { X } from 'lucide-react';
-import { SidebarAddForm } from '@/components/calendar/AddEventModal';
-
 
 
 interface SlidePanelProps {
@@ -19,12 +18,13 @@ interface SlidePanelProps {
 const SlidePanel: React.FC<SlidePanelProps> = ({ isOpen, type, onClose }) => {
   if (!isOpen || !type) return null;
 
-const config = {
+  const config = {
     pomodoro: { title: 'Focus Timer', component: <Timer /> },
-    todo: { title: 'Quick Add Task', component: <SidebarAddForm onSuccess={onClose} /> }, // [수정] SidebarAddForm 적용
+    // 이제 위에서 AddEventForm으로 가져왔기 때문에 오류가 사라집니다.
+todo: { title: 'New Task', component: <AddEventForm onSuccess={onClose} /> }, 
     memo: { title: 'Daily Memo', component: <MemoPad /> }
   };
-  
+
   return (
     <div className="absolute left-[360px] top-6 bottom-6 z-40 w-96 animate-in slide-in-from-left-4 fade-in duration-300">
       <GlassWrapper className="h-full border-white/40 shadow-2xl p-0 flex flex-col overflow-hidden bg-white/40 backdrop-blur-2xl">

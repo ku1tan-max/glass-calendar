@@ -1,39 +1,32 @@
-// main.js
-const { app, BrowserWindow, ipcMain } = require('electron'); // [수정] ipcMain 추가
+const { app, BrowserWindow } = require('electron');
 const isDev = require('electron-is-dev');
 const path = require('path');
 
 function createWindow() {
-  const win = new BrowserWindow({
+const win = new BrowserWindow({
     width: 1200,
     height: 800,
-    frame: false,
-    transparent: true,
-    hasShadow: true,
-    backgroundColor: '#00000000',
+    // --- 여기서부터 중요 ---
+    frame: false,             // 상단 메뉴바와 테두리를 제거합니다.
+    transparent: true,        // 배경을 투명하게 만듭니다.
+    hasShadow: true,          // 그림자 효과 (윈도우 전용)
+    backgroundColor: '#00000000', // 배경색을 완전 투명(Alpha 0)으로 설정
+    // -----------------------
     webPreferences: {
-      nodeIntegration: true,    // [기존 유지]
-      contextIsolation: false, // [기존 유지]
+      nodeIntegration: true,
+      contextIsolation: false,
     },
   });
 
-  const startUrl = isDev ? 'http://localhost:3000' : 'http://localhost:3000';
+  // 중요: 배포된 Vercel 주소를 여기에 넣으세요! 
+  // 로컬에서 테스트할 때는 http://localhost:3000 을 넣어도 됩니다.
+  const startUrl = isDev 
+  ? 'http://localhost:3000' // 개발 모드일 때 로컬 호스트 접속
+    : 'http://localhost:3000' ;
+
   win.loadURL(startUrl);
+
   win.setMenu(null);
-
-  // --- [9. 주석] 창 제어 IPC 핸들러 등록 ---
-  ipcMain.on('window-close', () => {
-    app.quit(); // 앱 종료
-  });
-
-  ipcMain.on('window-minimize', () => {
-    win.minimize(); // 창 최소화
-  });
-  
-  // 설정창 등 향후 확장을 위한 핸들러 (현재는 콘솔 로그)
-  ipcMain.on('window-settings', () => {
-    console.log("Settings window requested");
-  });
 }
 
 app.whenReady().then(createWindow);

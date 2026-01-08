@@ -1,56 +1,41 @@
-"use client";
+'use client';
 
-import React from 'react';
-import { Play, Pause, RotateCcw } from 'lucide-react';
-import { usePomodoro } from '@/hooks/usePomodoro';
+import React, { useState, useEffect } from 'react';
 
+// CompactTimer: 집중 시간을 관리하는 소형 타이머 컴포넌트
 const CompactTimer = () => {
-  // [명칭 통일] 전역 상태와 일치시킨 변수명 사용
-  const { 
-    timerTime, 
-    isTimerRunning, 
-    pomodoroMode, 
-    toggleTimer, 
-    resetTimer 
-  } = usePomodoro();
+  const [seconds, setSeconds] = useState(1500); // 초기값 25분
+  const [isActive, setIsActive] = useState(false);
 
-  // 초 단위를 MM:SS로 변환
-  const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (isActive && seconds > 0) {
+      interval = setInterval(() => setSeconds(s => s - 1), 1000);
+    }
+    return () => clearInterval(interval);
+  }, [isActive, seconds]);
+
+  const formatTime = (s: number) => {
+    const mins = Math.floor(s / 60);
+    const secs = s % 60;
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
-  const isWork = pomodoroMode === 'work';
-
   return (
-    <div className="p-4 rounded-[1.5rem] bg-white/40 border border-white/60 shadow-sm backdrop-blur-md">
-      <div className="flex items-center justify-between mb-2 px-1">
-        <span className={`text-[10px] font-black uppercase tracking-[0.15em] ${isWork ? 'text-rose-500' : 'text-emerald-500'}`}>
-          {isWork ? 'Focus' : 'Break'}
-        </span>
+    <div className="p-4 bg-white/5 rounded-2xl border border-white/10 flex flex-col items-center">
+      <div className="text-2xl font-mono text-white mb-2">{formatTime(seconds)}</div>
+      <div className="flex gap-2">
         <button 
-          onClick={resetTimer}
-          className="text-slate-300 hover:text-slate-500 transition-colors"
+          onClick={() => setIsActive(!isActive)}
+          className="px-3 py-1 text-xs rounded-full bg-blue-500/20 text-blue-200 hover:bg-blue-500/30"
         >
-          <RotateCcw size={14} />
+          {isActive ? 'Pause' : 'Start'}
         </button>
-      </div>
-
-      <div className="flex items-center justify-between">
-        <div className="text-3xl font-black font-mono tracking-tighter text-slate-800">
-          {formatTime(timerTime)}
-        </div>
-
-        <button
-          onClick={toggleTimer}
-          className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all active:scale-95 ${
-            isTimerRunning 
-            ? 'bg-slate-100 text-slate-600' 
-            : 'bg-blue-600 text-white shadow-lg shadow-blue-100'
-          }`}
+        <button 
+          onClick={() => { setIsActive(false); setSeconds(1500); }}
+          className="px-3 py-1 text-xs rounded-full bg-white/5 text-white/50 hover:bg-white/10"
         >
-          {isTimerRunning ? <Pause size={18} fill="currentColor" /> : <Play size={18} fill="currentColor" className="ml-0.5" />}
+          Reset
         </button>
       </div>
     </div>

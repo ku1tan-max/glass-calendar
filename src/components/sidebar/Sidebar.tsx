@@ -1,80 +1,88 @@
+// src/components/sidebar/Sidebar.tsx
 "use client";
 
 import React from 'react';
-import { Pin, Clock } from 'lucide-react';
-import GlassWrapper from '@/components/layout/GlassWrapper';
-import TodoList from './TodoList';
 import { useEventsContext } from '@/context/EventsContext';
+import { Pin, MessageSquareQuote, Calendar, CheckSquare, Settings } from 'lucide-react';
+import CompactTimer from '@/components/pomodoro/CompactTimer';
+import TodoList from './TodoList';
+import { useSettings } from '@/context/SettingsContext';
 
-// [1. 임의 네이밍 금지] 기존 SidebarProps 명칭 유지
-interface SidebarProps {
-  // 지시사항에 따라 미사용 Props(onFocusModeToggle, isFocusMode) 제거
-}
-
-const Sidebar: React.FC<SidebarProps> = () => {
-  // [3. 추측 코딩 금지] 기존 컨텍스트 명칭(useEventsContext) 엄수
-  const { isTimerRunning, timerTime, pinnedMemo } = useEventsContext();
-
-  const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
-  };
+const Sidebar = () => {
+  const { memos } = useEventsContext();
+  const { setIsSettingsOpen } = useSettings();
+  
+  // 고정된 메모 필터링 및 정렬
+  const pinnedMemos = memos
+    .filter(m => m.isPinned)
+    .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
 
   return (
-    <aside className="w-80 flex flex-col h-full z-10 shrink-0">
-      {/* [9. 주석을 통한 의도 전달] 
-        흰색 네모 박스 추적 결과: GlassWrapper 내부의 glass-effect가 이미 bg-white/25를 포함하므로,
-        중복된 bg-white/25를 제거하여 불투명도 겹침 현상을 해결함.
-      */}
-      <GlassWrapper className="flex flex-col h-full p-6 border-white/30 overflow-hidden shadow-2xl">
-        
-        {/* Pinned Section: 상태가 있을 때만 등장 (애니메이션 포함) */}
-        {(isTimerRunning || pinnedMemo) && (
-          <div className="mb-6 flex flex-col gap-2 animate-in fade-in slide-in-from-top-4 duration-500">
-            <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-1">
-              <Pin size={10} /> Pinned
-            </span>
+    <aside className="w-80 h-screen flex flex-col bg-white/10 backdrop-blur-md border-r border-white/20 p-6 overflow-hidden">
+      {/* 1. 상단 로고/타이틀 영역 */}
+      <div className="text-xl font-bold mb-8 px-2 text-white/90 tracking-tight">
+        Glass Calendar
+      </div>
+
+      {/* 2. 내비게이션 메뉴 영역 */}
+      <nav className="space-y-2 mb-8">
+        <button className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl bg-white/20 text-white shadow-sm transition-all">
+          <Calendar size={18} />
+          <span className="font-medium">Calendar</span>
+        </button>
+        <button className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-white/70 hover:bg-white/10 hover:text-white transition-all">
+          <CheckSquare size={18} />
+          <span className="font-medium">Tasks</span>
+        </button>
+      </nav>
+
+      {/* 3. 위젯 영역: 타이머 및 고정 메모 */}
+      <div className="flex flex-col gap-6 overflow-y-auto no-scrollbar flex-1">
+        <section>
+          <CompactTimer />
+        </section>
+
+        {pinnedMemos.length > 0 && (
+          <section className="animate-in fade-in slide-in-from-right duration-500">
+            <div className="flex items-center gap-2 mb-3 px-2">
+              <Pin size={14} className="text-blue-400 fill-current" />
+              <span className="text-[11px] font-black text-white/50 uppercase tracking-widest">
+                고정된 지침
+              </span>
+            </div>
             
             <div className="flex flex-col gap-2">
-              {isTimerRunning && (
-                <div className="flex items-center justify-between bg-slate-900/5 p-3 rounded-xl border border-white/10">
-                  <div className="flex items-center gap-2">
-                    <Clock size={14} className="text-slate-600" />
-                    <span className="text-xs font-bold text-slate-700">Focus Session</span>
-                  </div>
-                  <span className="text-sm font-black tabular-nums">{formatTime(timerTime)}</span>
-                </div>
-              )}
-
-              {pinnedMemo && (
-                <div className="bg-white/10 p-3 rounded-xl border border-white/20 shadow-sm">
-                  <p className="text-xs text-slate-600 line-clamp-2 leading-relaxed italic">
-                    "{pinnedMemo}"
+              {pinnedMemos.slice(0, 1).map(memo => (
+                <div 
+                  key={memo.id}
+                  className="group relative p-4 bg-white/10 border border-white/20 rounded-[1.5rem] backdrop-blur-sm transition-all hover:bg-white/20"
+                >
+                  <MessageSquareQuote size={16} className="absolute -top-2 -left-1 text-blue-300/50" />
+                  <p className="text-xs text-white/80 leading-relaxed font-medium">
+                    {memo.content.length > 80 ? `${memo.content.substring(0, 80)}...` : memo.content}
                   </p>
                 </div>
-              )}
+              ))}
             </div>
-            <div className="h-[1px] bg-slate-900/5 my-2" />
-          </div>
+          </section>
         )}
 
-        {/* 섹션 타이틀: Today 고정 */}
-        <div className="mb-4 shrink-0">
-          <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
-            Task Overview
-          </span>
-          <h2 className="text-2xl font-black text-slate-900">
-            Today
-          </h2>
-        </div>
-
-        {/* 메인 콘텐츠: TodoList 단일 렌더링 (Tab 전환 기능 삭제) */}
-        <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar">
+        {/* 4. 할 일 목록 (플렉스 성장형) */}
+        <section className="flex-1 min-h-0">
           <TodoList />
-        </div>
-        
-      </GlassWrapper>
+        </section>
+      </div>
+
+      {/* 5. 하단 설정 영역 */}
+      <div className="mt-auto pt-4 border-t border-white/10">
+        <button 
+          onClick={() => setIsSettingsOpen(true)}
+          className="w-full flex items-center gap-3 px-4 py-2 text-white/60 hover:text-white transition-colors"
+        >
+          <Settings size={18} />
+          <span className="font-medium">Settings</span>
+        </button>
+      </div>
     </aside>
   );
 };

@@ -2,66 +2,34 @@
 "use client";
 
 import React from 'react';
-import { Settings, Minus, X } from 'lucide-react';
-import { STRINGS } from '@/constants/strings';
+import { X, Minus, Settings } from 'lucide-react';
+import { useSettings } from '@/context/SettingsContext';
 
-interface WindowControlsProps {
-  onOpenSettings?: () => void;
-}
+const WindowControls = () => {
+  const { setIsSettingsOpen } = useSettings();
 
-const WindowControls: React.FC<WindowControlsProps> = ({ onOpenSettings }) => {
-  
-  // Electron IPC 통신 함수 (예시)
   const handleClose = () => {
-    console.log(STRINGS.WINDOW.CLOSE_CONFIRM);
-    // if (window.electronAPI) window.electronAPI.close();
-  };
-
-  const handleMinimize = () => {
-    // if (window.electronAPI) window.electronAPI.minimize();
-  };
-
-  const handleSettings = () => {
-    if (onOpenSettings) {
-      onOpenSettings();
-    } else {
-      console.log("설정 창 열기");
+    if (confirm("프로그램을 종료하시겠습니까?")) {
+      window.close();
     }
   };
 
   return (
-    <div className="flex items-center gap-2 group">
-      {/* 1. 종료 (Red) */}
+    <div className="flex items-center gap-1.5 px-4">
+      <button 
+        onClick={() => setIsSettingsOpen(true)}
+        className="w-8 h-8 flex items-center justify-center rounded-xl bg-white/40 border border-white/60 text-slate-400 hover:text-slate-800 transition-all active:scale-90"
+      >
+        <Settings size={14} />
+      </button>
+      <button className="w-8 h-8 flex items-center justify-center rounded-xl bg-white/40 border border-white/60 text-slate-400 hover:bg-white/80 transition-all">
+        <Minus size={14} />
+      </button>
       <button 
         onClick={handleClose}
-        className="w-3.5 h-3.5 rounded-full bg-[#FF5F56] border border-[#E0443E] 
-                   flex items-center justify-center shadow-inner
-                   hover:brightness-90 active:scale-95 transition-all duration-200"
-        aria-label="Close"
+        className="w-8 h-8 flex items-center justify-center rounded-xl bg-red-50/40 border border-red-100/60 text-red-400 hover:bg-red-500 hover:text-white transition-all"
       >
-        <X size={8} className="text-black/60 opacity-0 group-hover:opacity-100 transition-opacity" strokeWidth={3} />
-      </button>
-
-      {/* 2. 최소화 (Yellow) */}
-      <button 
-        onClick={handleMinimize}
-        className="w-3.5 h-3.5 rounded-full bg-[#FFBD2E] border border-[#DEA123]
-                   flex items-center justify-center shadow-inner
-                   hover:brightness-90 active:scale-95 transition-all duration-200"
-        aria-label="Minimize"
-      >
-        <Minus size={8} className="text-black/60 opacity-0 group-hover:opacity-100 transition-opacity" strokeWidth={3} />
-      </button>
-
-      {/* 3. 설정 (Green) - 전체화면 대신 설정창 호출로 변경 */}
-      <button 
-        onClick={handleSettings}
-        className="w-3.5 h-3.5 rounded-full bg-[#27C93F] border border-[#1AAB29]
-                   flex items-center justify-center shadow-inner
-                   hover:brightness-90 active:scale-95 transition-all duration-200"
-        aria-label="Settings"
-      >
-        <Settings size={8} className="text-black/60 opacity-0 group-hover:opacity-100 transition-opacity" strokeWidth={3} />
+        <X size={14} />
       </button>
     </div>
   );

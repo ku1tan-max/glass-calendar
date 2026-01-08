@@ -2,10 +2,9 @@
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { CalendarEvent, Category, DEFAULT_CATEGORIES } from '@/types';
-// 날짜 연산을 위한 필수 유틸리티
-import { parseISO, addDays, addWeeks, addMonths, addYears, isBefore, isSameDay, isAfter, format } from 'date-fns';
+import { format } from 'date-fns';
 
-// [New] 포모도로 모드 타입 정의
+// 포모도로 모드 타입 정의
 export type PomodoroMode = 'work' | 'shortBreak' | 'longBreak';
 
 interface EventsContextType {
@@ -15,12 +14,12 @@ interface EventsContextType {
   setSelectedDate: (date: Date) => void;
   addEvent: (newEvent: CalendarEvent) => void;
   deleteEvent: (id: string) => void;
-  toggleEvent: (id: string) => void;
+  toggleEvent: (id: string, date?: Date) => void; // date 인자 유지
   addCategory: (category: Category) => void;
   deleteCategory: (id: string) => void;
   getCategoryColor: (categoryId: string) => string;
   
-  // 타이머 전역 상태
+  // [기존 변수명 엄수]
   isTimerRunning: boolean;
   setIsTimerRunning: (val: boolean) => void;
   timerTime: number; 
@@ -28,7 +27,7 @@ interface EventsContextType {
   pinnedMemo: string | null;
   setPinnedMemo: (memo: string | null) => void;
   
-  // [추가] 포모도로 세부 상태
+  // [포모도로 연동 추가]
   pomodoroMode: PomodoroMode;
   setPomodoroMode: (mode: PomodoroMode) => void;
   sessionsCompleted: number;
@@ -45,18 +44,17 @@ export const EventsProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const [categories, setCategories] = useState<Category[]>(DEFAULT_CATEGORIES);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   
-  // 타이머 관련 상태
+  // [기존 변수명 유지]
   const [isTimerRunning, setIsTimerRunning] = useState(false);
   const [timerTime, setTimerTime] = useState(25 * 60);
   const [pinnedMemo, setPinnedMemo] = useState<string | null>(null);
-  
-  // [추가] 포모도로 전역 상태 초기화
-  const [pomodoroMode, setPomodoroMode] = useState<PomodoroMode>('work');
-  const [sessionsCompleted, setSessionsCompleted] = useState(0);
-  
   const [isEventModalOpen, setIsEventModalOpen] = useState(false);
 
-  // 로컬 스토리지 데이터 복원
+  // [추가 상태]
+  const [pomodoroMode, setPomodoroMode] = useState<PomodoroMode>('work');
+  const [sessionsCompleted, setSessionsCompleted] = useState(0);
+
+  // 1. LocalStorage 로드
   useEffect(() => {
     const savedEvents = localStorage.getItem('glass-calendar-events');
     const savedCategories = localStorage.getItem('glass-calendar-categories');
@@ -66,54 +64,52 @@ export const EventsProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     if (savedPinnedMemo) setPinnedMemo(savedPinnedMemo);
   }, []);
 
-  // 데이터 변경 시 자동 저장
+  // 2. 데이터 변경 시 저장
   useEffect(() => {
     localStorage.setItem('glass-calendar-events', JSON.stringify(events));
   }, [events]);
 
-  /**
-   * [검수 지시 반영] 선제적 인스턴스화: 반복 일정을 실제 객체들로 풀어서 생성
-   */
   const addEvent = useCallback((newEvent: CalendarEvent) => {
-    const { recurrence, date, endDate } = newEvent;
-
-    if (!recurrence || recurrence === 'none') {
-      setEvents((prev) => [...prev, newEvent]);
-      return;
-    }
-
-    const generatedEvents: CalendarEvent[] = [];
-    const startDate = parseISO(date);
-    
-    // 종료일 설정: 입력값 우선, 없으면 1년, 최대 2년 제한
-    let targetEndDate = endDate ? parseISO(endDate) : addYears(startDate, 1);
-    const maxLimitDate = addYears(startDate, 2);
-    if (isAfter(targetEndDate, maxLimitDate)) targetEndDate = maxLimitDate;
-
-    let currentDate = startDate;
-    
-    while (isBefore(currentDate, targetEndDate) || isSameDay(currentDate, targetEndDate)) {
-      generatedEvents.push({
-        ...newEvent,
-        id: crypto.randomUUID(), 
-        date: format(currentDate, 'yyyy-MM-dd'),
-      });
-
-      if (recurrence === 'daily') currentDate = addDays(currentDate, 1);
-      else if (recurrence === 'weekly') currentDate = addWeeks(currentDate, 1);
-      else if (recurrence === 'monthly') currentDate = addMonths(currentDate, 1);
-      else break;
-    }
-
-    setEvents((prev) => [...prev, ...generatedEvents]);
+    setEvents((prev) => [...prev, newEvent]);
   }, []);
 
   const deleteEvent = useCallback((id: string) => {
     setEvents((prev) => prev.filter((e) => e.id !== id));
   }, []);
 
-  const toggleEvent = useCallback((id: string) => {
-    setEvents((prev) => prev.map((e) => e.id === id ? { ...e, isCompleted: !e.isCompleted } : e));
+  /**
+   * [검수 지시 사항] 가상 일정 인스턴스화 및 ID 절삭 로직 유지
+   */
+  const toggleEvent = useCallback((id: string, date?: Date) => {
+    setEvents((prev) => {
+      const existingIndex = prev.findIndex((e) => e.id === id);
+
+      if (existingIndex !== -1) {
+        // 실존 데이터: 상태 반전
+        return prev.map((e, i) => i === existingIndex ? { ...e, isCompleted: !e.isCompleted } : e);
+      }
+
+      // 가상 데이터: 실제 데이터로 변환
+      if (!date) return prev;
+      const dateStr = format(date, 'yyyy-MM-dd');
+      const lastDashIndex = id.lastIndexOf(`-${dateStr}`);
+      if (lastDashIndex === -1) return prev;
+      
+      const originalId = id.substring(0, lastDashIndex);
+      const template = prev.find(t => t.id === originalId);
+
+      if (!template) return prev;
+
+      const newInstance: CalendarEvent = {
+        ...template,
+        id: id,
+        date: dateStr,
+        isCompleted: true, 
+        recurrence: 'none'
+      };
+
+      return [...prev, newInstance];
+    });
   }, []);
 
   const addCategory = (category: Category) => setCategories(prev => [...prev, category]);

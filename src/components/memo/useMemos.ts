@@ -15,13 +15,14 @@ export const useMemos = () => {
     setIsInitialized(true);
   }, []);
 
-  // 데이터 변경 시 저장
+  // [참조 무결성] 데이터 변경 시 localStorage 즉시 동기화
   useEffect(() => {
     if (isInitialized) {
       localStorage.setItem('glass-calendar-memos', JSON.stringify(memos));
     }
   }, [memos, isInitialized]);
 
+  // 메모 추가
   const addMemo = useCallback((content: string) => {
     const newMemo: Memo = {
       id: crypto.randomUUID(),
@@ -30,19 +31,21 @@ export const useMemos = () => {
       isPinned: false
     };
     setMemos(prev => [newMemo, ...prev]);
-    return newMemo;
   }, []);
 
+  // [수정 요구사항 반영] 메모 내용 수정 시 전체 객체 상태 업데이트
   const updateMemo = useCallback((id: string, content: string) => {
     setMemos(prev => prev.map(m => 
       m.id === id ? { ...m, content, updatedAt: new Date().toISOString() } : m
     ));
   }, []);
 
+  // 메모 삭제
   const deleteMemo = useCallback((id: string) => {
     setMemos(prev => prev.filter(m => m.id !== id));
   }, []);
 
+  // 핀 상태 토글
   const togglePin = useCallback((id: string) => {
     setMemos(prev => prev.map(m => 
       m.id === id ? { ...m, isPinned: !m.isPinned } : m

@@ -1,28 +1,28 @@
-// src/components/sidebar/Sidebar.tsx
 "use client";
 
 import React from 'react';
 import { useMemos } from '@/components/memo/useMemos';
 import { Pin, MessageSquareQuote } from 'lucide-react';
-import SidebarTimer from '@/components/pomodoro/Timer';
+// [수정] 기존 SidebarTimer 대신 CompactTimer(가칭) 성격의 컴포넌트로 교체
+import CompactTimer from '@/components/pomodoro/CompactTimer';
 import TodoList from './TodoList';
 
 const Sidebar = () => {
   const { memos } = useMemos();
   
-  // [지시 반영] 고정된 메모 필터링 (최신순)
+  // 고정된 메모 필터링 (최신순)
   const pinnedMemos = memos.filter(m => m.isPinned).sort((a, b) => 
     new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
   );
 
   return (
-    <aside className="w-80 h-full flex flex-col gap-6 p-6 overflow-hidden">
-      {/* 1. 타이머 섹션 */}
-      <section>
-        <SidebarTimer />
+    <aside className="w-80 h-full flex flex-col gap-6 p-6 overflow-hidden border-r border-white/20">
+      {/* 1. 컴팩트 타이머 섹션 - 사이드바 상단에 가볍게 배치 */}
+      <section className="animate-in fade-in slide-in-from-left duration-700">
+        <CompactTimer />
       </section>
 
-      {/* 2. [New] 고정 메모 섹션 (지시 반영) */}
+      {/* 2. 고정 메모 섹션 */}
       {pinnedMemos.length > 0 && (
         <section className="animate-in fade-in slide-in-from-right duration-500">
           <div className="flex items-center gap-2 mb-3 px-2">
@@ -38,7 +38,6 @@ const Sidebar = () => {
               >
                 <MessageSquareQuote size={16} className="absolute -top-2 -left-1 text-blue-200" />
                 <p className="text-xs text-slate-600 leading-relaxed font-medium">
-                  {/* [지시 반영] 최대 100자 제한 로직 */}
                   {memo.content.length > 100 
                     ? `${memo.content.substring(0, 100)}...` 
                     : memo.content}
@@ -49,7 +48,7 @@ const Sidebar = () => {
         </section>
       )}
 
-      {/* 3. 할 일 목록 섹션 */}
+      {/* 3. 할 일 목록 섹션 - 남은 공간을 모두 차지 */}
       <section className="flex-1 flex flex-col min-h-0">
         <TodoList />
       </section>

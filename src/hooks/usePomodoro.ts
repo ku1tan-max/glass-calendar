@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useCallback } from 'react';
-import { useEventsContext, PomodoroMode } from '@/context/EventsContext';
+import { useEventsContext } from '@/context/EventsContext';
 
 export const usePomodoro = () => {
   const { 
@@ -11,34 +11,24 @@ export const usePomodoro = () => {
     sessionsCompleted, setSessionsCompleted 
   } = useEventsContext();
 
-  // 설정값 (초 단위)
   const CONFIG = { 
     work: 25 * 60, 
     short: 5 * 60, 
     long: 15 * 60,
-    interval: 4 // 4회차마다 긴 휴식
+    interval: 4 
   };
 
   /**
-   * [보완] 시스템 알림 발송 함수
+   * [보완] 시스템 알림 발송 (꼬임 방지를 위해 단순화 유지)
    */
   const sendNotification = useCallback((title: string, body: string) => {
     if (typeof window !== 'undefined' && Notification.permission === 'granted') {
-      new Notification(title, { body, icon: '/favicon.ico' });
+      new Notification(title, { body });
     }
   }, []);
 
   /**
-   * [보완] 알림 권한 요청 (앱 실행 시 최초 1회)
-   */
-  useEffect(() => {
-    if (typeof window !== 'undefined' && Notification.permission === 'default') {
-      Notification.requestPermission();
-    }
-  }, []);
-
-  /**
-   * 모드 전환 로직 (작업 <-> 휴식)
+   * 모드 전환 로직
    */
   const switchMode = useCallback(() => {
     if (pomodoroMode === 'work') {
@@ -48,29 +38,29 @@ export const usePomodoro = () => {
       if (nextCount % CONFIG.interval === 0) {
         setPomodoroMode('longBreak');
         setTimerTime(CONFIG.long);
-        sendNotification('집행 완료! 긴 휴식', '대단합니다! 15분간 충분히 휴식하세요.');
+        sendNotification('집행 완료', '긴 휴식을 시작합니다.');
       } else {
         setPomodoroMode('shortBreak');
         setTimerTime(CONFIG.short);
-        sendNotification('집행 완료! 짧은 휴식', '5분간 숨을 돌리세요.');
+        sendNotification('집행 완료', '짧은 휴식을 시작합니다.');
       }
     } else {
       setPomodoroMode('work');
       setTimerTime(CONFIG.work);
-      sendNotification('휴식 종료! 다시 집중', '새로운 집중 세션을 시작합니다.');
+      sendNotification('휴식 종료', '다시 집중할 시간입니다.');
     }
-    setIsTimerRunning(false); // 전환 시 타이머는 일단 정지
+    setIsTimerRunning(false);
   }, [pomodoroMode, sessionsCompleted, setTimerTime, setIsTimerRunning, setPomodoroMode, setSessionsCompleted, sendNotification]);
 
   /**
-   * 1초마다 카운트다운 실행
+   * 타이머 핵심 엔진
    */
   useEffect(() => {
     let interval: NodeJS.Timeout | null = null;
     
     if (isTimerRunning && timerTime > 0) {
       interval = setInterval(() => {
-        setTimerTime(prev => prev - 1);
+        setTimerTime((prev) => prev - 1);
       }, 1000);
     } else if (timerTime === 0) {
       switchMode();
@@ -80,9 +70,10 @@ export const usePomodoro = () => {
   }, [isTimerRunning, timerTime, switchMode, setTimerTime]);
 
   return {
-    timeLeft: timerTime,
-    mode: pomodoroMode,
-    isActive: isTimerRunning,
+    // [명칭 엄수] Context의 변수명을 그대로 UI에 전달
+    timerTime,
+    isTimerRunning,
+    pomodoroMode,
     sessionsCompleted,
     toggleTimer: () => setIsTimerRunning(!isTimerRunning),
     resetTimer: () => {
@@ -91,7 +82,7 @@ export const usePomodoro = () => {
       setTimerTime(CONFIG.work);
       setSessionsCompleted(0);
     },
-    // UI 프로그레스 바 계산용 (현재 시간 / 전체 시간)
-    percent: (timerTime / (pomodoroMode === 'work' ? CONFIG.work : pomodoroMode === 'short' ? CONFIG.short : CONFIG.long)) * 100
+    // 진행률 계산 로직 (UI에서 사용)
+    percent: (timerTime / (pomodoroMode === 'work' ? CONFIG.work : pomodoroMode === 'shortBreak' ? CONFIG.short : CONFIG.long)) * 100
   };
 };

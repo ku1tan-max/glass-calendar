@@ -1,3 +1,4 @@
+// src/components/calendar/Calendar.tsx
 "use client";
 
 import React, { useState } from 'react';
@@ -5,11 +6,13 @@ import { format, isSameDay, startOfMonth, endOfMonth, startOfWeek, endOfWeek, ea
 import { ko } from 'date-fns/locale';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useEventsContext } from '@/context/EventsContext';
+// [수정] 폐기된 isEventVisibleOnDay 대신 단순화된 getEventsForDate 임포트
+import { getEventsForDate } from '@/utils/dateUtils';
 
 const Calendar = () => {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   
-  // [수정] 전역 상태 사용 (지역 상태 isModalOpen 삭제)
+  // [수정] 전역 상태 사용
   const { events, getCategoryColor, setSelectedDate, setIsEventModalOpen } = useEventsContext();
 
   const monthStart = startOfMonth(currentMonth);
@@ -45,14 +48,15 @@ const Calendar = () => {
       {/* 날짜 그리드 */}
       <div className="flex-1 grid grid-cols-7 overflow-y-auto custom-scrollbar">
         {calendarDays.map((day) => {
-          const dayEvents = events.filter(e => isSameDay(new Date(e.date), day));
+          // [수정] 재설계된 유틸리티를 사용하여 실제 데이터 필터링
+          const dayEvents = getEventsForDate(events, day);
           
           return (
             <div
               key={day.toString()}
               onClick={() => {
-                setSelectedDate(day); // 전역 날짜 업데이트
-                setIsEventModalOpen(true); // [수정] 전역 모달 상태를 true로 변경
+                setSelectedDate(day); 
+                setIsEventModalOpen(true); 
               }}
               className={`min-h-[100px] p-2 border-b border-r border-white/5 transition-all cursor-pointer hover:bg-white/20
                 ${!isSameMonth(day, monthStart) ? 'opacity-20' : 'opacity-100'}
@@ -81,8 +85,6 @@ const Calendar = () => {
           );
         })}
       </div>
-
-      {/* [삭제] <AddEventModal /> - 여기서 띄우지 않고 Home(page.tsx)에서 전역적으로 관리합니다. */}
     </div>
   );
 };
